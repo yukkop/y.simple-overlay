@@ -1,4 +1,5 @@
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include <stdio.h>
 
 int main() {
@@ -8,14 +9,20 @@ int main() {
         return 1;
     }
 
+    XVisualInfo vinfo;
+    XMatchVisualInfo(display, DefaultScreen(display), 32, TrueColor, &vinfo);
+
     int screen = DefaultScreen(display);
-    unsigned long border = BlackPixel(display, screen);
-    unsigned long background = WhitePixel(display, screen);
-    Window window = XCreateSimpleWindow(display, RootWindow(display, screen), 10, 10, 100, 100, 1, border, background);
 
     XSetWindowAttributes attributes;
+    attributes.colormap = XCreateColormap(display, DefaultRootWindow(display), vinfo.visual, AllocNone);
+    attributes.border_pixel = 0;
+    attributes.background_pixel = 0;
     attributes.override_redirect = True;
-    XChangeWindowAttributes(display, window, CWOverrideRedirect, &attributes);
+
+    Window window = XCreateWindow(display, RootWindow(display, screen), 10, 10, 100, 100, 0, vinfo.depth, InputOutput, vinfo.visual, CWColormap | CWBorderPixel | CWBackPixel | CWOverrideRedirect, &attributes);
+
+
 
     XMapWindow(display, window);
     XStoreName(display, window, "Overlay");
