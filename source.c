@@ -1,89 +1,68 @@
-#include <X11/Xft/Xft.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 int main() {
-  Display *display = XOpenDisplay(NULL);
-  if (display == NULL) {
-    fprintf(stderr, "Cannot open display\n");
-    return 1;
-  }
+    Display *dpy;
+    Window root;
+    XVisualInfo vinfo;
+    XSetWindowAttributes attr;
+    Visual *visual;
+    Colormap cmap;
+    XFontStruct *font;
+    GC gc;
+    XEvent e;
+    int screen;
 
-  XVisualInfo vinfo;
-  int screen = DefaultScreen(display);
+    char hello[] = "vas vzlomali";
 
-  XMatchVisualInfo(display, screen, 32, TrueColor, &vinfo);
+    dpy = XOpenDisplay(NULL);
+    if (!dpy) {
+        fprintf(stderr, "Cannot open display\n");
+        exit(1);
+    }
 
-  unsigned long border = BlackPixel(display, screen);
-  unsigned long background = WhitePixel(display, screen);
-  Window root = RootWindow(display, screen);
+    screen = DefaultScreen(dpy);
+    root = RootWindow(dpy, screen);
 
-  XSetWindowAttributes attributes;
-  attributes.colormap = XCreateColormap(display, root,
-                                        vinfo.visual, AllocNone);
-  attributes.border_pixel = 0;
-  attributes.background_pixel = 0;
-  attributes.override_redirect = True;
+    if (!XMatchVisualInfo(dpy, screen, 32, TrueColor, &vinfo)) {
+        fprintf(stderr, "No matching visual\n");
+        exit(1);
+    }
 
+    visual = vinfo.visual;
+    cmap = XCreateColormap(dpy, root, visual, AllocNone);
 
-   Window window = XCreateWindow(display, root, 10, 10, 100, 100, 0, vinfo.depth,
-                              InputOutput, vinfo.visual,
-                              CWColormap | CWBorderPixel | CWBackPixel |
-                                  CWOverrideRedirect,
-                              &attributes);
+    attr.colormap = cmap;
+    attr.border_pixel = 0;
+    attr.background_pixel = 0;
+    attr.override_redirect = True;
 
-  XMapWindow(display, window);
-  XStoreName(display, window, "Overlay");
+    Window win = XCreateWindow(dpy, root, 0, 0, 400, 200, 0,
+                                vinfo.depth, InputOutput, visual,
+                                CWColormap | CWBorderPixel | CWBackPixel | CWOverrideRedirect, &attr);
 
-  XSelectInput(display, window, ExposureMask | KeyPressMask);
+    XSelectInput(dpy, win, ExposureMask | KeyPressMask);
+    XMapWindow(dpy, win);
 
-  XftFont *font;
-  XRenderColor color;
-  XftDraw *draw;
-  XftColor xftColor;
+    gc = XCreateGC(dpy, win, 0, NULL);
+    font = XLoadQueryFont(dpy, "10x20");
+    XSetFont(dpy, gc, font->fid);
 
-  XSelectInput(display, window, ExposureMask);
-  XMapWindow(display, window);
+    while (1) {
+        XNextEvent(dpy, &e);
+        if (e.type == Expose) {
+            XSetForeground(dpy, gc, 0xffffff); // Set text color to white
+            XDrawString(dpy, win, gc, 10, 50, hello, strlen(hello));
+        }
+        if (e.type == KeyPress)
+            break;
+    }
 
-  draw = XftDrawCreate(display, window, DefaultVisual(display, screen),
-                       DefaultColormap(display, screen));
-  if (!draw) {
-    fprintf(stderr, "Failed to create Xft draw object\n");
-    return 1;
-  }
+    XCloseDisplay(dpy);
 
-  font = XftFontOpenName(display, screen, "monospace");
-  if (!font) {
-    fprintf(stderr, "Failed to open font\n");
-    return 1;
-  }
-
-  color.red = 0;
-  color.green = 65535;
-  color.blue = 0;
-  color.alpha = 65535;
-
-  XftColorAllocValue(display, DefaultVisual(display, screen),
-                     DefaultColormap(display, screen), &color, &xftColor);
-  XftDrawString8(draw, &xftColor, font, 10, 50, (XftChar8 *)"Hello, Overlay!",
-               15);
-
-  XEvent event;
-  while (1) {
-    XNextEvent(display, &event);
-    if (event.type == Expose)
-      XftDrawString8(draw, &xftColor, font, 10, 50,
-                     (XftChar8 *)"Hello, Overlay!", 15);
-
-    if (event.type == KeyPress)
-      break;
-  }
-
-  XftColorFree(display, DefaultVisual(display, screen),
-               DefaultColormap(display, screen), &xftColor);
-  XftDrawDestroy(draw);
-  XftFontClose(display, font);
-  XCloseDisplay(display);
-  return 0;
+    return 0;
 }
+
