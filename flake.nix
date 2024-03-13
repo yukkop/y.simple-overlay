@@ -10,6 +10,7 @@
     defaultPackage.x86_64-linux = with nixpkgs.legacyPackages.x86_64-linux;
     mkShell {
       buildInputs = [
+        xlsfonts
         gcc
         xorg.libX11.dev
         xorg.libXft.dev
