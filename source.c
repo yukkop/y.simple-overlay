@@ -48,7 +48,7 @@ int main() {
     XMapWindow(display, win);
 
     gc = XCreateGC(display, win, 0, NULL);
-    font = XLoadQueryFont(display, "-");
+    font = XLoadQueryFont(display, "-adobe-helvetica-medium-r-normal-*-12-*-*-*-*-*-*-*");
     if (!font) {
       fprintf(stderr, "Failed to open font\n");
       return 1;
