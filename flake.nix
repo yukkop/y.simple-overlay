@@ -12,6 +12,7 @@
       buildInputs = [
         gcc
         xorg.libX11.dev
+        xorg.libXft.dev
       ];
 
       shellHook = ''
