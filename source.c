@@ -4,7 +4,56 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main() {
+typedef struct {
+  char* text;
+  int len;
+} String;
+
+String empty_string() {
+  String string;
+  string.text = "";
+  string.len = 0;
+  return string;
+}
+
+String all_args(int argc, char *argv[]) {
+    // Calculate the total length needed for the concatenated string
+    int totalLength = 0;
+    for (int i = 1; i < argc; i++) {
+        totalLength += strlen(argv[i]) + 1; // +1 for space or null terminator
+    }
+
+    if (totalLength == 0) {
+        printf("Warn! No arguments to concatenate.\n");
+        return empty_string();
+    }
+
+    // Allocate memory for the concatenated string
+    char *allArgs = malloc(totalLength * sizeof(char));
+    if (allArgs == NULL) {
+        printf("Memory allocation failed.\n");
+        exit(1);
+    }
+
+    allArgs[0] = '\0'; // Initialize the string with a null terminator
+
+    // Concatenate all arguments
+    for (int i = 1; i < argc; i++) {
+        strcat(allArgs, argv[i]);
+        if (i < argc - 1) {
+            strcat(allArgs, " "); // Add a space between arguments, not after the last one
+        }
+    }
+
+    String string;
+    string.text = allArgs;
+    string.len = totalLength;
+    return string;
+}
+
+int main(int argc, char *argv[]) {
+    String args = all_args(argc, argv);
+
     Display *display;
     Window root;
     XVisualInfo vinfo;
@@ -15,8 +64,6 @@ int main() {
     GC gc;
     XEvent e;
     int screen;
-
-    char hello[] = "vas vzlomali";
 
     display = XOpenDisplay(NULL);
     if (!display) {
@@ -60,7 +107,7 @@ int main() {
         XNextEvent(display, &e);
         if (e.type == Expose) {
             XSetForeground(display, gc, 0xffffff); // Set text color to white
-            XDrawString(display, win, gc, 10, 50, hello, strlen(hello));
+            XDrawString(display, win, gc, 10, 50, args.text, args.len - 1);
         }
         if (e.type == KeyPress)
             break;
@@ -70,4 +117,3 @@ int main() {
 
     return 0;
 }
-

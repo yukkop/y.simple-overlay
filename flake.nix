@@ -12,6 +12,7 @@
       buildInputs = [
         xlsfonts
         gcc
+        gdb
         xorg.libX11.dev
         xorg.libXft.dev
       ];
